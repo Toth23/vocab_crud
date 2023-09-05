@@ -1,9 +1,33 @@
-use axum::{routing::get, Router};
+use std::env;
 use std::net::SocketAddr;
+use std::sync::Arc;
+
+use deadpool_diesel::sqlite::{Manager, Pool, Runtime};
+use dotenvy::dotenv;
+
+use routes::create_router;
+
+mod handlers;
+mod models;
+mod routes;
+mod schema;
+
+pub struct AppState {
+    db: Pool,
+}
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/", get(handler));
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let manager = Manager::new(database_url, Runtime::Tokio1);
+    let pool = Pool::builder(manager)
+        .max_size(8)
+        .build()
+        .unwrap();
+
+    let app = create_router(Arc::new(AppState { db: pool }));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
@@ -11,8 +35,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-async fn handler() -> &'static str {
-    "Hello, world!"
 }
