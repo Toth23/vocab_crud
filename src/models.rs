@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::words)]
@@ -11,9 +10,9 @@ pub struct Word {
     pub date_added: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct VocabResponse {
-    pub id: i32,
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::words)]
+pub struct NewWord {
     pub word: String,
     pub translation: Option<String>,
     pub date_added: String,

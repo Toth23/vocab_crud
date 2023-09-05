@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.20"
+chrono = "0.4.28"
 diesel = { version = "2.1.1", features = ["sqlite"] }
 deadpool-diesel = { version = "0.4.1", features = ["sqlite"] }
 dotenvy = "0.15"
