@@ -6,7 +6,8 @@ use axum::{
     Json,
     response::IntoResponse,
 };
-use diesel::{QueryDsl, RunQueryDsl, SelectableHelper};
+use axum::extract::Path;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use diesel::associations::HasTable;
 use serde::Deserialize;
 use chrono;
@@ -18,6 +19,7 @@ use crate::{
 use crate::dtos::{CreateWordDto, VocabResponseDto};
 use crate::models::NewWord;
 use crate::schema::words::dsl::words;
+use crate::schema::words::id;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct FilterOptions {
@@ -90,6 +92,26 @@ pub async fn create_word_handler(
                 .values(&new_word)
                 .execute(conn)
                 .expect("Error saving new word")
+        }).await.expect("Error interacting with the database");
+
+    let json_response = serde_json::json!({
+        "status": "success",
+    });
+
+    Ok(Json(json_response))
+}
+
+pub async fn delete_word_handler(
+    Path(word_id): Path<i32>,
+    State(db): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let app_state: Arc<AppState> = db.clone();
+
+    app_state.db.get().await.expect("Failed to get database connection")
+        .interact(move |conn| {
+            diesel::delete(words::table().filter(id.eq(word_id)))
+                .execute(conn)
+                .expect("Error deleting word")
         }).await.expect("Error interacting with the database");
 
     let json_response = serde_json::json!({
