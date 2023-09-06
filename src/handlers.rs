@@ -74,7 +74,7 @@ pub async fn list_vocab_handler(
         .collect::<Vec<(Vec<Example>, Word)>>();
 
     let items = words_with_examples.iter()
-        .map(|record| map_word_to_response(record))
+        .map(|(word_examples, word)| map_word_to_response(word, word_examples))
         .collect::<Vec<VocabResponseDto>>();
 
     let json_response = serde_json::json!({
@@ -101,16 +101,18 @@ pub async fn create_word_handler(
         date_added: date_time_now.format("%d.%m.%Y").to_string(),
     };
 
-    app_state.db.get().await.expect("Failed to get database connection")
+    let word = app_state.db.get().await.expect("Failed to get database connection")
         .interact(move |conn| {
             diesel::insert_into(words::table())
                 .values(&new_word)
-                .execute(conn)
+                .returning(Word::as_returning())
+                .get_result(conn)
                 .expect("Error saving new word")
         }).await.expect("Error interacting with the database");
 
     let json_response = serde_json::json!({
         "status": "success",
+        "word": map_word_to_response(&word, &vec![]),
     });
 
     Ok(Json(json_response))
@@ -145,16 +147,18 @@ pub async fn create_example_handler(
 
     let new_example = NewExample { word_id, example: body.example };
 
-    app_state.db.get().await.expect("Failed to get database connection")
+    let example = app_state.db.get().await.expect("Failed to get database connection")
         .interact(move |conn| {
             diesel::insert_into(examples::table())
                 .values(&new_example)
-                .execute(conn)
+                .returning(Example::as_returning())
+                .get_result(conn)
                 .expect("Error saving new example")
         }).await.expect("Error interacting with the database");
 
     let json_response = serde_json::json!({
         "status": "success",
+        "example": map_example_to_response(&example)
     });
 
     Ok(Json(json_response))
@@ -185,7 +189,7 @@ pub async fn delete_example_handler(
     Ok(Json(json_response))
 }
 
-fn map_word_to_response((word_examples, word): &(Vec<Example>, Word)) -> VocabResponseDto {
+fn map_word_to_response(word: &Word, word_examples: &Vec<Example>) -> VocabResponseDto {
     VocabResponseDto {
         id: word.id,
         word: word.word.to_owned(),
