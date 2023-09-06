@@ -20,3 +20,8 @@ pub struct CreateWordDto {
     pub word: String,
     pub translation: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateExampleDto {
+    pub example: String,
+}
