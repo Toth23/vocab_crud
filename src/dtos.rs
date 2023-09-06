@@ -5,7 +5,14 @@ pub struct VocabResponseDto {
     pub id: i32,
     pub word: String,
     pub translation: Option<String>,
+    pub examples: Vec<ExampleResponseDto>,
     pub date_added: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ExampleResponseDto {
+    pub id: i32,
+    pub example: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

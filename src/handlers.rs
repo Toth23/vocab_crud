@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum::extract::Path;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{BelongingToDsl, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
 use diesel::associations::HasTable;
 use serde::Deserialize;
 use chrono;
@@ -16,8 +16,8 @@ use crate::{
     AppState,
     models::Word,
 };
-use crate::dtos::{CreateWordDto, VocabResponseDto};
-use crate::models::NewWord;
+use crate::dtos::{CreateWordDto, ExampleResponseDto, VocabResponseDto};
+use crate::models::{Example, NewWord};
 use crate::schema::words::dsl::words;
 use crate::schema::words::id;
 
@@ -49,18 +49,29 @@ pub async fn list_vocab_handler(
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let app_state: Arc<AppState> = db.clone();
-    let db_records = app_state.db.get().await.expect("Failed to get database connection")
+    let (db_words, db_examples) = app_state.db.get().await.expect("Failed to get database connection")
         .interact(move |conn| {
-            words
+            let db_words = words
                 .limit(limit as i64)
                 .offset(offset as i64)
                 .select(Word::as_select())
                 .load(conn)
-                .expect("Error loading words")
+                .expect("Error loading words");
+            let db_examples = Example::belonging_to(&db_words)
+                .select(Example::as_select())
+                .load(conn)
+                .expect("Error loading examples");
+            (db_words, db_examples)
         }).await.expect("Error interacting with the database");
 
-    let items = db_records.iter()
-        .map(|record| map_to_response(record))
+    let words_with_examples = db_examples
+        .grouped_by(&db_words)
+        .into_iter()
+        .zip(db_words)
+        .collect::<Vec<(Vec<Example>, Word)>>();
+
+    let items = words_with_examples.iter()
+        .map(|record| map_word_to_response(record))
         .collect::<Vec<VocabResponseDto>>();
 
     let json_response = serde_json::json!({
@@ -121,11 +132,16 @@ pub async fn delete_word_handler(
     Ok(Json(json_response))
 }
 
-fn map_to_response(record: &Word) -> VocabResponseDto {
+fn map_word_to_response((word_examples, word): &(Vec<Example>, Word)) -> VocabResponseDto {
     VocabResponseDto {
-        id: record.id.to_owned(),
-        word: record.word.to_owned(),
-        translation: record.translation.to_owned(),
-        date_added: record.date_added.to_owned(),
+        id: word.id,
+        word: word.word.to_owned(),
+        translation: word.translation.to_owned(),
+        examples: word_examples.into_iter().map(map_example_to_response).collect(),
+        date_added: word.date_added.to_owned(),
     }
+}
+
+fn map_example_to_response(example: &Example) -> ExampleResponseDto {
+    ExampleResponseDto { id: example.id, example: example.example.to_owned() }
 }
