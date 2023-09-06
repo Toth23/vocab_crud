@@ -97,6 +97,7 @@ pub async fn create_word_handler(
     let new_word = NewWord {
         word: body.word,
         translation: body.translation,
+        source: body.source,
         date_added: date_time_now.format("%d.%m.%Y").to_string(),
     };
 
@@ -189,6 +190,7 @@ fn map_word_to_response((word_examples, word): &(Vec<Example>, Word)) -> VocabRe
         id: word.id,
         word: word.word.to_owned(),
         translation: word.translation.to_owned(),
+        source: word.source.to_owned(),
         examples: word_examples.into_iter().map(map_example_to_response).collect(),
         date_added: word.date_added.to_owned(),
     }

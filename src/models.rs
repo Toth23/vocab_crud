@@ -7,6 +7,7 @@ pub struct Word {
     pub id: i32,
     pub word: String,
     pub translation: Option<String>,
+    pub source: Option<String>,
     pub date_added: String,
 }
 
@@ -15,6 +16,7 @@ pub struct Word {
 pub struct NewWord {
     pub word: String,
     pub translation: Option<String>,
+    pub source: Option<String>,
     pub date_added: String,
 }
 

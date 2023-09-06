@@ -18,6 +18,6 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route("/api/vocab", post(create_word_handler))
         .route("/api/vocab/:word_id", delete(delete_word_handler))
         .route("/api/vocab/:word_id/examples", post(create_example_handler))
-        .route("/api/vocab/:word_id/examples/example_id", delete(delete_example_handler))
+        .route("/api/vocab/:word_id/examples/:example_id", delete(delete_example_handler))
         .with_state(app_state)
 }
