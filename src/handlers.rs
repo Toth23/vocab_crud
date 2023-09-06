@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum::extract::Path;
-use diesel::{BelongingToDsl, BoolExpressionMethods, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{BelongingToDsl, BoolExpressionMethods, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper, sql_query};
 use diesel::associations::HasTable;
 use serde::Deserialize;
 use chrono;
@@ -154,6 +154,8 @@ pub async fn create_example_handler(
 
     let example = app_state.db.get().await.expect("Failed to get database connection")
         .interact(move |conn| {
+            sql_query("PRAGMA foreign_keys = ON").execute(conn).expect("Error enabling foreign keys");
+
             diesel::insert_into(examples::table())
                 .values(&new_example)
                 .returning(Example::as_returning())
