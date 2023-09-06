@@ -126,6 +126,11 @@ pub async fn delete_word_handler(
 
     app_state.db.get().await.expect("Failed to get database connection")
         .interact(move |conn| {
+            diesel::delete(examples::table()
+                .filter(example_table_word_id.eq(word_id)))
+                .execute(conn)
+                .expect("Error deleting examples of word");
+
             diesel::delete(words::table().filter(word_table_id.eq(word_id)))
                 .execute(conn)
                 .expect("Error deleting word")
