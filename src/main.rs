@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use deadpool_diesel::sqlite::{Manager, Pool, Runtime};
 use dotenvy::dotenv;
+use tower_http::cors::{Any, CorsLayer};
 
 use routes::create_router;
 
@@ -28,7 +29,8 @@ async fn main() {
         .build()
         .unwrap();
 
-    let app = create_router(Arc::new(AppState { db: pool }));
+    let app = create_router(Arc::new(AppState { db: pool }))
+        .layer(CorsLayer::new().allow_methods(Any).allow_headers(Any).allow_origin(Any));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
