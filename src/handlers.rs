@@ -7,22 +7,22 @@ use axum::{
     response::IntoResponse,
 };
 use axum::extract::Path;
+use chrono;
 use diesel::{BelongingToDsl, BoolExpressionMethods, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper, sql_query};
 use diesel::associations::HasTable;
 use serde::Deserialize;
-use chrono;
 
 use crate::{
     AppState,
     models::Word,
 };
-use crate::dtos::{CreateExampleDto, CreateWordDto, ExampleResponseDto, VocabResponseDto};
+use crate::dtos::{CreateExampleDto, CreateWordDto, ExampleResponseDto, UpdateWordDto, VocabResponseDto};
 use crate::models::{Example, NewExample, NewWord};
 use crate::schema::examples::dsl::examples;
-use crate::schema::words::dsl::words;
-use crate::schema::words::id as word_table_id;
 use crate::schema::examples::id as example_table_id;
 use crate::schema::examples::word_id as example_table_word_id;
+use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
+use crate::schema::words::dsl::words;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct FilterOptions {
@@ -113,6 +113,32 @@ pub async fn create_word_handler(
     let json_response = serde_json::json!({
         "status": "success",
         "word": map_word_to_response(&word, &vec![]),
+    });
+
+    Ok(Json(json_response))
+}
+
+pub async fn update_word_handler(
+    Path(word_id): Path<i32>,
+    State(db): State<Arc<AppState>>,
+    Json(body): Json<UpdateWordDto>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let app_state: Arc<AppState> = db.clone();
+
+    app_state.db.get().await.expect("Failed to get database connection")
+        .interact(move |conn| {
+            diesel::update(words::table().filter(word_table_id.eq(word_id)))
+                .set((
+                    word_column.eq(body.word),
+                    translation.eq(body.translation),
+                    source.eq(body.source),
+                ))
+                .execute(conn)
+                .expect("Error updating word")
+        }).await.expect("Error interacting with the database");
+
+    let json_response = serde_json::json!({
+        "status": "success",
     });
 
     Ok(Json(json_response))
