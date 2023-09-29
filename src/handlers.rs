@@ -48,7 +48,7 @@ pub async fn list_vocab_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let Query(opts) = opts.unwrap_or_default();
 
-    let limit = opts.limit.unwrap_or(10);
+    let limit = opts.limit.unwrap_or(1000);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let app_state: Arc<AppState> = db.clone();
