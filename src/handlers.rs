@@ -8,7 +8,7 @@ use axum::{
 };
 use axum::extract::Path;
 use chrono;
-use diesel::{BelongingToDsl, BoolExpressionMethods, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper, sql_query};
+use diesel::{BelongingToDsl, BoolExpressionMethods, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper, sql_query, SqliteConnection};
 use diesel::associations::HasTable;
 use serde::Deserialize;
 
@@ -52,20 +52,20 @@ pub async fn list_vocab_handler(
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let app_state: Arc<AppState> = db.clone();
-    let (db_words, db_examples) = app_state.db.get().await.expect("Failed to get database connection")
-        .interact(move |conn| {
-            let db_words = words
-                .limit(limit as i64)
-                .offset(offset as i64)
-                .select(Word::as_select())
-                .load(conn)
-                .expect("Error loading words");
-            let db_examples = Example::belonging_to(&db_words)
-                .select(Example::as_select())
-                .load(conn)
-                .expect("Error loading examples");
-            (db_words, db_examples)
-        }).await.expect("Error interacting with the database");
+
+    let (db_words, db_examples) = execute_in_db(app_state, move |conn| {
+        let db_words = words
+            .limit(limit as i64)
+            .offset(offset as i64)
+            .select(Word::as_select())
+            .load(conn)
+            .expect("Error loading words");
+        let db_examples = Example::belonging_to(&db_words)
+            .select(Example::as_select())
+            .load(conn)
+            .expect("Error loading examples");
+        (db_words, db_examples)
+    }).await;
 
     let words_with_examples = db_examples
         .grouped_by(&db_words)
@@ -101,14 +101,13 @@ pub async fn create_word_handler(
         date_added: date_time_now.format("%d.%m.%Y").to_string(),
     };
 
-    let word = app_state.db.get().await.expect("Failed to get database connection")
-        .interact(move |conn| {
-            diesel::insert_into(words::table())
-                .values(&new_word)
-                .returning(Word::as_returning())
-                .get_result(conn)
-                .expect("Error saving new word")
-        }).await.expect("Error interacting with the database");
+    let word = execute_in_db(app_state, move |conn| {
+        diesel::insert_into(words::table())
+            .values(&new_word)
+            .returning(Word::as_returning())
+            .get_result(conn)
+            .expect("Error saving new word")
+    }).await;
 
     let json_response = serde_json::json!({
         "status": "success",
@@ -125,17 +124,16 @@ pub async fn update_word_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();
 
-    app_state.db.get().await.expect("Failed to get database connection")
-        .interact(move |conn| {
-            diesel::update(words::table().filter(word_table_id.eq(word_id)))
-                .set((
-                    word_column.eq(body.word),
-                    translation.eq(body.translation),
-                    source.eq(body.source),
-                ))
-                .execute(conn)
-                .expect("Error updating word")
-        }).await.expect("Error interacting with the database");
+    execute_in_db(app_state, move |conn| {
+        diesel::update(words::table().filter(word_table_id.eq(word_id)))
+            .set((
+                word_column.eq(body.word),
+                translation.eq(body.translation),
+                source.eq(body.source),
+            ))
+            .execute(conn)
+            .expect("Error updating word")
+    }).await;
 
     let json_response = serde_json::json!({
         "status": "success",
@@ -150,17 +148,16 @@ pub async fn delete_word_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();
 
-    app_state.db.get().await.expect("Failed to get database connection")
-        .interact(move |conn| {
-            diesel::delete(examples::table()
-                .filter(example_table_word_id.eq(word_id)))
-                .execute(conn)
-                .expect("Error deleting examples of word");
+    execute_in_db(app_state, move |conn| {
+        diesel::delete(examples::table()
+            .filter(example_table_word_id.eq(word_id)))
+            .execute(conn)
+            .expect("Error deleting examples of word");
 
-            diesel::delete(words::table().filter(word_table_id.eq(word_id)))
-                .execute(conn)
-                .expect("Error deleting word")
-        }).await.expect("Error interacting with the database");
+        diesel::delete(words::table().filter(word_table_id.eq(word_id)))
+            .execute(conn)
+            .expect("Error deleting word")
+    }).await;
 
     let json_response = serde_json::json!({
         "status": "success",
@@ -178,16 +175,15 @@ pub async fn create_example_handler(
 
     let new_example = NewExample { word_id, example: body.example };
 
-    let example = app_state.db.get().await.expect("Failed to get database connection")
-        .interact(move |conn| {
-            sql_query("PRAGMA foreign_keys = ON").execute(conn).expect("Error enabling foreign keys");
+    let example = execute_in_db(app_state, move |conn| {
+        sql_query("PRAGMA foreign_keys = ON").execute(conn).expect("Error enabling foreign keys");
 
-            diesel::insert_into(examples::table())
-                .values(&new_example)
-                .returning(Example::as_returning())
-                .get_result(conn)
-                .expect("Error saving new example")
-        }).await.expect("Error interacting with the database");
+        diesel::insert_into(examples::table())
+            .values(&new_example)
+            .returning(Example::as_returning())
+            .get_result(conn)
+            .expect("Error saving new example")
+    }).await;
 
     let json_response = serde_json::json!({
         "status": "success",
@@ -204,15 +200,13 @@ pub async fn delete_example_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();
 
-    let number_deleted = app_state.db.get().await
-        .expect("Failed to get database connection")
-        .interact(move |conn| {
-            diesel::delete(examples::table()
-                .filter(example_table_id.eq(example_id)
-                    .and(example_table_word_id.eq(word_id))))
-                .execute(conn)
-                .expect("Error deleting word")
-        }).await.expect("Error interacting with the database");
+    let number_deleted = execute_in_db(app_state, move |conn| {
+        diesel::delete(examples::table()
+            .filter(example_table_id.eq(example_id)
+                .and(example_table_word_id.eq(word_id))))
+            .execute(conn)
+            .expect("Error deleting word")
+    }).await;
 
     let json_response = serde_json::json!({
         "status": "success",
@@ -220,6 +214,16 @@ pub async fn delete_example_handler(
     });
 
     Ok(Json(json_response))
+}
+
+async fn execute_in_db<F, R>(app_state: Arc<AppState>, f: F) -> R
+    where
+        F: FnOnce(&mut SqliteConnection) -> R + Send + 'static,
+        R: Send + 'static,
+{
+    app_state.db.get().await.expect("Failed to get database connection")
+        .interact(f)
+        .await.expect("Error interacting with the database")
 }
 
 fn map_word_to_response(word: &Word, word_examples: &Vec<Example>) -> VocabResponseDto {
