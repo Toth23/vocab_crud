@@ -11,6 +11,8 @@ mod models;
 mod routes;
 mod schema;
 mod dtos;
+mod mappers;
+mod db_util;
 
 pub struct AppState {
     db: Pool,
