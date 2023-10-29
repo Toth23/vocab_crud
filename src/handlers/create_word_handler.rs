@@ -11,8 +11,8 @@ use diesel::{RunQueryDsl, SelectableHelper};
 use diesel::associations::HasTable;
 
 use crate::AppState;
-use crate::dtos::CreateWordDto;
 use crate::db_util::execute_in_db;
+use crate::dtos::CreateWordDto;
 use crate::mappers::map_word_to_response;
 use crate::models::NewWord;
 use crate::models::Word;
@@ -41,9 +41,10 @@ pub async fn create_word(
             .expect("Error saving new word")
     }).await;
 
+    let word_response = map_word_to_response(&word, &vec![]);
     let json_response = serde_json::json!({
         "status": "success",
-        "word": map_word_to_response(&word, &vec![]),
+        "word": word_response,
     });
 
     Ok(Json(json_response))

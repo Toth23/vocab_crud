@@ -36,9 +36,10 @@ pub async fn create_example(
             .expect("Error saving new example")
     }).await;
 
+    let example_response = map_example_to_response(&example);
     let json_response = serde_json::json!({
         "status": "success",
-        "example": map_example_to_response(&example)
+        "example": example_response,
     });
 
     Ok(Json(json_response))
