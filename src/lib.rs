@@ -10,9 +10,9 @@ mod handlers;
 mod models;
 mod routes;
 mod schema;
-mod dtos;
 mod mappers;
 mod db_util;
+pub mod dtos;
 
 pub struct AppState {
     db: Pool,
