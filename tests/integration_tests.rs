@@ -8,7 +8,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use serde_json::Value;
 
 use vocab_crud::create_app;
-use vocab_crud::dtos::{CreateWordDto, UpdateWordDto, VocabResponseDto};
+use vocab_crud::dtos::{CreateExampleDto, CreateWordDto, ExampleResponseDto, UpdateWordDto, VocabResponseDto};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
@@ -76,6 +76,34 @@ async fn create_modifies_and_deletes_a_word() {
     assert_eq!(word_list.len(), 0);
 }
 
+#[tokio::test]
+async fn create_and_deletes_an_example() {
+    // given
+    let port = spawn_test_server();
+
+    // when
+    let create_word_dto = get_sample_create_word_dto();
+    let create_response = post_word(port, &create_word_dto).await;
+    let word_id = create_response.id;
+
+    let create_example_dto = CreateExampleDto { example: "test example".to_owned() };
+    let example_response_dto = post_example(port, word_id, &create_example_dto).await;
+
+    // then
+    let word_list = get_word_list(port).await;
+    let examples_from_list = &word_list.get(0).unwrap().examples;
+    assert_eq!(examples_from_list.len(), 1);
+    assert_eq!(examples_from_list[0].example, create_example_dto.example);
+
+    // when
+    delete_example(port, word_id, example_response_dto.id).await;
+
+    // then
+    let word_list = get_word_list(port).await;
+    let examples_from_list = &word_list.get(0).unwrap().examples;
+    assert_eq!(examples_from_list.len(), 0);
+}
+
 async fn get_word_list(port: u16) -> Vec<VocabResponseDto> {
     let client = reqwest::Client::new();
     let resp = client.get(format!("http://localhost:{port}/api/vocab"))
@@ -83,7 +111,6 @@ async fn get_word_list(port: u16) -> Vec<VocabResponseDto> {
         .await
         .unwrap();
 
-    // then
     assert_eq!(resp.status(), 200);
 
     let mut resp_body: HashMap<String, Value> = resp.json().await.unwrap();
@@ -102,7 +129,6 @@ async fn post_word(port: u16, create_word_dto: &CreateWordDto) -> VocabResponseD
         .await
         .unwrap();
 
-    // then
     assert_eq!(resp.status(), 200);
 
     let mut resp_body: HashMap<String, Value> = resp.json().await.unwrap();
@@ -123,7 +149,6 @@ async fn update_word(port: u16, word_id: i32, update_word_dto: &UpdateWordDto) {
         .await
         .unwrap();
 
-    // then
     assert_eq!(resp.status(), 200);
 
     let resp_body: HashMap<String, Value> = resp.json().await.unwrap();
@@ -137,11 +162,42 @@ async fn delete_word(port: u16, word_id: i32) {
         .await
         .unwrap();
 
-    // then
     assert_eq!(resp.status(), 200);
 
     let resp_body: HashMap<String, Value> = resp.json().await.unwrap();
     assert_eq!(resp_body["status"], "success");
+}
+
+async fn post_example(port: u16, word_id: i32, create_example_dto: &CreateExampleDto) -> ExampleResponseDto {
+    let client = reqwest::Client::new();
+    let resp = client.post(format!("http://localhost:{port}/api/vocab/{word_id}/examples"))
+        .json(&create_example_dto)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), 200);
+
+    let mut resp_body: HashMap<String, Value> = resp.json().await.unwrap();
+    assert_eq!(resp_body["status"], "success");
+    let example_response: ExampleResponseDto = serde_json::from_value(resp_body.remove("example").unwrap())
+        .expect("Deserialization failed");
+    assert_eq!(example_response.example, create_example_dto.example);
+    example_response
+}
+
+async fn delete_example(port: u16, word_id: i32, example_id: i32) {
+    let client = reqwest::Client::new();
+    let resp = client.delete(format!("http://localhost:{port}/api/vocab/{word_id}/examples/{example_id}"))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), 200);
+
+    let resp_body: HashMap<String, Value> = resp.json().await.unwrap();
+    assert_eq!(resp_body["status"], "success");
+    assert_eq!(resp_body["number_deleted"], 1);
 }
 
 fn get_sample_create_word_dto() -> CreateWordDto {
