@@ -110,8 +110,7 @@ async fn create_a_word_with_examples_in_one_call() {
     let port = spawn_test_server();
 
     // when
-    let examples = vec!["example 1", "example 2"].iter()
-        .map(|ex| CreateExampleDto { example: ex.to_string() }).collect();
+    let examples = vec!["example 1".to_owned(), "example 2".to_owned()];
     let create_word_dto = get_sample_create_word_dto(examples);
     let create_response = post_word(port, &create_word_dto).await;
 
@@ -219,7 +218,7 @@ async fn delete_example(port: u16, word_id: i32, example_id: i32) {
     assert_eq!(resp_body["number_deleted"], 1);
 }
 
-fn get_sample_create_word_dto(examples: Vec<CreateExampleDto>) -> CreateWordDto {
+fn get_sample_create_word_dto(examples: Vec<String>) -> CreateWordDto {
     CreateWordDto {
         word: "你好".to_owned(),
         translation: Some("hello".to_owned()),

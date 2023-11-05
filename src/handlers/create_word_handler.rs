@@ -43,7 +43,7 @@ pub async fn create_word(
 
         let word_examples: Vec<Example> = body.examples.iter().map(|ex| {
             diesel::insert_into(examples::table())
-                .values(NewExample { word_id: word.id, example: ex.example.to_owned() })
+                .values(NewExample { word_id: word.id, example: ex.to_owned() })
                 .returning(Example::as_returning())
                 .get_result(conn)
                 .expect("Error saving new example")

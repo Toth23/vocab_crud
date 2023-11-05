@@ -22,7 +22,7 @@ pub struct CreateWordDto {
     pub translation: Option<String>,
     pub source: Option<String>,
     #[serde(default)]
-    pub examples: Vec<CreateExampleDto>,
+    pub examples: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
