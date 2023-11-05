@@ -46,7 +46,7 @@ async fn create_modifies_and_deletes_a_word() {
     let port = spawn_test_server();
 
     // when
-    let create_word_dto = get_sample_create_word_dto();
+    let create_word_dto = get_sample_create_word_dto(vec![]);
     let create_response = post_word(port, &create_word_dto).await;
     let word_id = create_response.id;
 
@@ -82,7 +82,7 @@ async fn create_and_deletes_an_example() {
     let port = spawn_test_server();
 
     // when
-    let create_word_dto = get_sample_create_word_dto();
+    let create_word_dto = get_sample_create_word_dto(vec![]);
     let create_response = post_word(port, &create_word_dto).await;
     let word_id = create_response.id;
 
@@ -102,6 +102,25 @@ async fn create_and_deletes_an_example() {
     let word_list = get_word_list(port).await;
     let examples_from_list = &word_list.get(0).unwrap().examples;
     assert_eq!(examples_from_list.len(), 0);
+}
+
+#[tokio::test]
+async fn create_a_word_with_examples_in_one_call() {
+    // given
+    let port = spawn_test_server();
+
+    // when
+    let examples = vec!["example 1", "example 2"].iter()
+        .map(|ex| CreateExampleDto { example: ex.to_string() }).collect();
+    let create_word_dto = get_sample_create_word_dto(examples);
+    let create_response = post_word(port, &create_word_dto).await;
+
+    // then
+    assert_eq!(create_response.examples.len(), 2);
+
+    let word_list = get_word_list(port).await;
+    let examples_from_list = &word_list.get(0).unwrap().examples;
+    assert_eq!(examples_from_list.len(), 2);
 }
 
 async fn get_word_list(port: u16) -> Vec<VocabResponseDto> {
@@ -200,11 +219,12 @@ async fn delete_example(port: u16, word_id: i32, example_id: i32) {
     assert_eq!(resp_body["number_deleted"], 1);
 }
 
-fn get_sample_create_word_dto() -> CreateWordDto {
+fn get_sample_create_word_dto(examples: Vec<CreateExampleDto>) -> CreateWordDto {
     CreateWordDto {
         word: "你好".to_owned(),
         translation: Some("hello".to_owned()),
         source: Some("some source".to_owned()),
+        examples,
     }
 }
 

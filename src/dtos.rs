@@ -21,6 +21,7 @@ pub struct CreateWordDto {
     pub word: String,
     pub translation: Option<String>,
     pub source: Option<String>,
+    pub examples: Vec<CreateExampleDto>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
