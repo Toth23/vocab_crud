@@ -1,6 +1,6 @@
-CREATE TABLE examples (
-	id	INTEGER NOT NULL,
-	word_id	INTEGER NOT NULL REFERENCES words(id),
-	example	TEXT NOT NULL,
-	PRIMARY KEY(id AUTOINCREMENT)
-)
+CREATE TABLE examples
+(
+    id      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    word_id UUID NOT NULL REFERENCES words (id),
+    example TEXT NOT NULL
+);
