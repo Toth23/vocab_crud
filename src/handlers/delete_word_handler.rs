@@ -9,16 +9,17 @@ use axum::{
 use axum::extract::Path;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use diesel::associations::HasTable;
+use uuid::Uuid;
 
 use crate::AppState;
 use crate::db_util::execute_in_db;
 use crate::schema::examples::dsl::examples;
 use crate::schema::examples::word_id as example_table_word_id;
-use crate::schema::words::id as word_table_id;
 use crate::schema::words::dsl::words;
+use crate::schema::words::id as word_table_id;
 
 pub async fn delete_word(
-    Path(word_id): Path<i32>,
+    Path(word_id): Path<Uuid>,
     State(db): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();

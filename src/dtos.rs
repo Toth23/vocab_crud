@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct VocabResponseDto {
-    pub id: i32,
+    pub id: Uuid,
     pub word: String,
     pub translation: Option<String>,
     pub source: Option<String>,
@@ -12,7 +13,7 @@ pub struct VocabResponseDto {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExampleResponseDto {
-    pub id: i32,
+    pub id: Uuid,
     pub example: String,
 }
 

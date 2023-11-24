@@ -1,11 +1,13 @@
 extern crate diesel_migrations;
 
 use std::collections::HashMap;
+use std::env;
 
 use diesel::Connection;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use serde_json::Value;
+use uuid::Uuid;
 
 use vocab_crud::create_app;
 use vocab_crud::dtos::{CreateExampleDto, CreateWordDto, ExampleResponseDto, UpdateWordDto, VocabResponseDto};
@@ -159,7 +161,7 @@ async fn post_word(port: u16, create_word_dto: &CreateWordDto) -> VocabResponseD
     vocab_response
 }
 
-async fn update_word(port: u16, word_id: i32, update_word_dto: &UpdateWordDto) {
+async fn update_word(port: u16, word_id: Uuid, update_word_dto: &UpdateWordDto) {
     let client = reqwest::Client::new();
     let resp = client.put(format!("http://localhost:{port}/api/vocab/{word_id}"))
         .json(&update_word_dto)
@@ -173,7 +175,7 @@ async fn update_word(port: u16, word_id: i32, update_word_dto: &UpdateWordDto) {
     assert_eq!(resp_body["status"], "success");
 }
 
-async fn delete_word(port: u16, word_id: i32) {
+async fn delete_word(port: u16, word_id: Uuid) {
     let client = reqwest::Client::new();
     let resp = client.delete(format!("http://localhost:{port}/api/vocab/{word_id}"))
         .send()
@@ -186,7 +188,7 @@ async fn delete_word(port: u16, word_id: i32) {
     assert_eq!(resp_body["status"], "success");
 }
 
-async fn post_example(port: u16, word_id: i32, create_example_dto: &CreateExampleDto) -> ExampleResponseDto {
+async fn post_example(port: u16, word_id: Uuid, create_example_dto: &CreateExampleDto) -> ExampleResponseDto {
     let client = reqwest::Client::new();
     let resp = client.post(format!("http://localhost:{port}/api/vocab/{word_id}/examples"))
         .json(&create_example_dto)
@@ -204,7 +206,7 @@ async fn post_example(port: u16, word_id: i32, create_example_dto: &CreateExampl
     example_response
 }
 
-async fn delete_example(port: u16, word_id: i32, example_id: i32) {
+async fn delete_example(port: u16, word_id: Uuid, example_id: Uuid) {
     let client = reqwest::Client::new();
     let resp = client.delete(format!("http://localhost:{port}/api/vocab/{word_id}/examples/{example_id}"))
         .send()
@@ -228,9 +230,11 @@ fn get_sample_create_word_dto(examples: Vec<String>) -> CreateWordDto {
 }
 
 fn spawn_test_server() -> u16 {
-    let database_url = "integration-test.db".to_owned();
-    let mut connection = SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+    dotenvy::from_filename(".env.test").ok();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in env");
+
+    let mut connection = PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to database at {}", database_url));
 
     connection.run_pending_migrations(MIGRATIONS).expect("Could not run migrations");
     clean_db_tables(&mut connection);
@@ -246,8 +250,8 @@ fn spawn_test_server() -> u16 {
     port
 }
 
-pub fn clean_db_tables(conn: &mut SqliteConnection) {
-    let tables = ["words", "examples"];
+pub fn clean_db_tables(conn: &mut PgConnection) {
+    let tables = ["examples", "words"];
 
     for table in &tables {
         diesel::sql_query(format!("DELETE FROM {}", table))

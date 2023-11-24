@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::Router;
-use deadpool_diesel::sqlite::{Manager, Pool, Runtime};
+use deadpool_diesel::postgres::{Manager, Pool, Runtime};
 use tower_http::cors::{Any, CorsLayer};
 
 use routes::create_router;

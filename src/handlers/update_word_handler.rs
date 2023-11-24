@@ -9,6 +9,7 @@ use axum::{
 use axum::extract::Path;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use diesel::associations::HasTable;
+use uuid::Uuid;
 
 use crate::AppState;
 use crate::db_util::execute_in_db;
@@ -17,7 +18,7 @@ use crate::schema::words::{id as word_table_id, source, translation, word as wor
 use crate::schema::words::dsl::words;
 
 pub async fn update_word(
-    Path(word_id): Path<i32>,
+    Path(word_id): Path<Uuid>,
     State(db): State<Arc<AppState>>,
     Json(body): Json<UpdateWordDto>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

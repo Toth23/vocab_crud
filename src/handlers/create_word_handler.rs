@@ -7,6 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use chrono;
+use chrono::Utc;
 use diesel::{RunQueryDsl, SelectableHelper};
 use diesel::associations::HasTable;
 
@@ -25,13 +26,13 @@ pub async fn create_word(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();
 
-    let date_time_now = chrono::offset::Utc::now();
+    let date_time_now = Utc::now().naive_utc();
 
     let new_word = NewWord {
         word: body.word,
         translation: body.translation,
         source: body.source,
-        date_added: date_time_now.format("%d.%m.%Y").to_string(),
+        date_added: date_time_now,
     };
 
     let (word, word_examples) = execute_in_db(app_state, move |conn| {

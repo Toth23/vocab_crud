@@ -9,7 +9,7 @@ pub fn map_word_to_response(word: &Word, word_examples: &Vec<Example>) -> VocabR
         translation: word.translation.to_owned(),
         source: word.source.to_owned(),
         examples: word_examples.into_iter().map(map_example_to_response).collect(),
-        date_added: word.date_added.to_owned(),
+        date_added: word.date_added.to_string(),
     }
 }
 
@@ -20,12 +20,14 @@ pub fn map_example_to_response(example: &Example) -> ExampleResponseDto {
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDateTime;
+    use uuid::Uuid;
     use super::*;
 
     #[test]
     fn test_map_example() {
         // given
-        let example = Example { id: 1, word_id: 2, example: "test example".to_owned() };
+        let example = Example { id: Uuid::new_v4(), word_id: Uuid::new_v4(), example: "test example".to_owned() };
 
         // when
         let example_response_dto = map_example_to_response(&example);
@@ -39,13 +41,16 @@ mod tests {
     fn test_map_word() {
         // given
         let example_string = "test example";
-        let example = Example { id: 1, word_id: 2, example: example_string.to_owned() };
+        let word_id = Uuid::new_v4();
+        let example = Example { id: Uuid::new_v4(), word_id, example: example_string.to_owned() };
+        let date_added_string = "2023-01-30 23:52:04";
+        let date_added = NaiveDateTime::parse_from_str(date_added_string, "%Y-%m-%d %H:%M:%S").unwrap();
         let word = Word {
-            id: 2,
+            id: word_id,
             word: "test word".to_owned(),
             translation: Some("test translation".to_owned()),
             source: None,
-            date_added: "01.01.2023".to_string(),
+            date_added,
         };
 
         // when
@@ -58,6 +63,6 @@ mod tests {
         assert_eq!(vocab_response_dto.source, word.source);
         assert_eq!(vocab_response_dto.examples.len(), 1);
         assert_eq!(vocab_response_dto.examples[0].example, example_string);
-        assert_eq!(vocab_response_dto.date_added, word.date_added);
+        assert_eq!(vocab_response_dto.date_added, date_added_string);
     }
 }

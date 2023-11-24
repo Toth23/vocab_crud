@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:11
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: test-user
+      POSTGRES_PASSWORD: test-pw
+      POSTGRES_DB: integration-test
+    volumes:
+      - ./docker-entrypoint-initdb:/docker-entrypoint-initdb.d/

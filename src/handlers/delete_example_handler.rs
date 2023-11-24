@@ -9,6 +9,7 @@ use axum::{
 use axum::extract::Path;
 use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl};
 use diesel::associations::HasTable;
+use uuid::Uuid;
 
 use crate::AppState;
 use crate::db_util::execute_in_db;
@@ -17,7 +18,7 @@ use crate::schema::examples::id as example_table_id;
 use crate::schema::examples::word_id as example_table_word_id;
 
 pub async fn delete_example(
-    Path((word_id, example_id)): Path<(i32, i32)>,
+    Path((word_id, example_id)): Path<(Uuid, Uuid)>,
     State(db): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();

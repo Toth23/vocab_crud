@@ -8,7 +8,7 @@ use vocab_crud::create_app;
 async fn main() {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in env");
     let app = create_app(database_url);
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
