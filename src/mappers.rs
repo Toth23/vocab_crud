@@ -8,26 +8,35 @@ pub fn map_word_to_response(word: &Word, word_examples: &Vec<Example>) -> VocabR
         word: word.word.to_owned(),
         translation: word.translation.to_owned(),
         source: word.source.to_owned(),
-        examples: word_examples.into_iter().map(map_example_to_response).collect(),
+        examples: word_examples
+            .into_iter()
+            .map(map_example_to_response)
+            .collect(),
         date_added: word.date_added.and_utc().to_rfc3339(),
     }
 }
 
 pub fn map_example_to_response(example: &Example) -> ExampleResponseDto {
-    ExampleResponseDto { id: example.id, example: example.example.to_owned() }
+    ExampleResponseDto {
+        id: example.id,
+        example: example.example.to_owned(),
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use chrono::{NaiveDateTime, Utc};
     use uuid::Uuid;
-    use super::*;
 
     #[test]
     fn should_map_example() {
         // given
-        let example = Example { id: Uuid::new_v4(), word_id: Uuid::new_v4(), example: "test example".to_owned() };
+        let example = Example {
+            id: Uuid::new_v4(),
+            word_id: Uuid::new_v4(),
+            example: "test example".to_owned(),
+        };
 
         // when
         let example_response_dto = map_example_to_response(&example);
@@ -42,7 +51,11 @@ mod tests {
         // given
         let example_string = "test example";
         let word_id = Uuid::new_v4();
-        let example = Example { id: Uuid::new_v4(), word_id, example: example_string.to_owned() };
+        let example = Example {
+            id: Uuid::new_v4(),
+            word_id,
+            example: example_string.to_owned(),
+        };
         let word = Word {
             id: word_id,
             word: "test word".to_owned(),
@@ -66,7 +79,8 @@ mod tests {
     #[test]
     fn should_add_utc_timezone_to_date_added() {
         // given
-        let date_added = NaiveDateTime::parse_from_str("2023-01-30 23:52:04", "%Y-%m-%d %H:%M:%S").unwrap();
+        let date_added =
+            NaiveDateTime::parse_from_str("2023-01-30 23:52:04", "%Y-%m-%d %H:%M:%S").unwrap();
         let word = Word {
             id: Uuid::new_v4(),
             word: "test word".to_owned(),

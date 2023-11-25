@@ -3,21 +3,18 @@ use std::sync::Arc;
 use axum::{
     extract::{Query, State},
     http::StatusCode,
-    Json,
     response::IntoResponse,
+    Json,
 };
 use diesel::{BelongingToDsl, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::Deserialize;
 
-use crate::{
-    AppState,
-    models::Word,
-};
 use crate::db_util::execute_in_db;
 use crate::dtos::VocabResponseDto;
 use crate::mappers::map_word_to_response;
 use crate::models::Example;
 use crate::schema::words::dsl::words;
+use crate::{models::Word, AppState};
 
 #[derive(Deserialize, Debug, Default)]
 pub struct FilterOptions {
@@ -48,7 +45,8 @@ pub async fn list_vocab(
             .load(conn)
             .expect("Error loading examples");
         (db_words, db_examples)
-    }).await;
+    })
+    .await;
 
     let words_with_examples = db_examples
         .grouped_by(&db_words)
@@ -56,7 +54,8 @@ pub async fn list_vocab(
         .zip(db_words)
         .collect::<Vec<(Vec<Example>, Word)>>();
 
-    let items = words_with_examples.iter()
+    let items = words_with_examples
+        .iter()
         .map(|(word_examples, word)| map_word_to_response(word, word_examples))
         .collect::<Vec<VocabResponseDto>>();
 

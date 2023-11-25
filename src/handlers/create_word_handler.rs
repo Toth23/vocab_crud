@@ -1,24 +1,19 @@
 use std::sync::Arc;
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-    response::IntoResponse,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono;
 use chrono::Utc;
-use diesel::{RunQueryDsl, SelectableHelper};
 use diesel::associations::HasTable;
+use diesel::{RunQueryDsl, SelectableHelper};
 
-use crate::AppState;
 use crate::db_util::execute_in_db;
 use crate::dtos::CreateWordDto;
 use crate::mappers::map_word_to_response;
-use crate::models::{Example, NewExample, NewWord};
 use crate::models::Word;
+use crate::models::{Example, NewExample, NewWord};
 use crate::schema::examples::dsl::examples;
 use crate::schema::words::dsl::words;
+use crate::AppState;
 
 pub async fn create_word(
     State(db): State<Arc<AppState>>,
@@ -42,16 +37,24 @@ pub async fn create_word(
             .get_result(conn)
             .expect("Error saving new word");
 
-        let word_examples: Vec<Example> = body.examples.iter().map(|ex| {
-            diesel::insert_into(examples::table())
-                .values(NewExample { word_id: word.id, example: ex.to_owned() })
-                .returning(Example::as_returning())
-                .get_result(conn)
-                .expect("Error saving new example")
-        }).collect();
+        let word_examples: Vec<Example> = body
+            .examples
+            .iter()
+            .map(|ex| {
+                diesel::insert_into(examples::table())
+                    .values(NewExample {
+                        word_id: word.id,
+                        example: ex.to_owned(),
+                    })
+                    .returning(Example::as_returning())
+                    .get_result(conn)
+                    .expect("Error saving new example")
+            })
+            .collect();
 
         (word, word_examples)
-    }).await;
+    })
+    .await;
 
     let word_response = map_word_to_response(&word, &word_examples);
     let json_response = serde_json::json!({

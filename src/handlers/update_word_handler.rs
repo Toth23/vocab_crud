@@ -1,21 +1,16 @@
 use std::sync::Arc;
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-    response::IntoResponse,
-};
 use axum::extract::Path;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use diesel::associations::HasTable;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
-use crate::AppState;
 use crate::db_util::execute_in_db;
 use crate::dtos::UpdateWordDto;
-use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
 use crate::schema::words::dsl::words;
+use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
+use crate::AppState;
 
 pub async fn update_word(
     Path(word_id): Path<Uuid>,
@@ -33,7 +28,8 @@ pub async fn update_word(
             ))
             .execute(conn)
             .expect("Error updating word")
-    }).await;
+    })
+    .await;
 
     let json_response = serde_json::json!({
         "status": "success",

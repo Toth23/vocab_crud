@@ -20,7 +20,4 @@ diesel::table! {
 
 diesel::joinable!(examples -> words (word_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    examples,
-    words,
-);
+diesel::allow_tables_to_appear_in_same_query!(examples, words,);
