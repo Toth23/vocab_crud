@@ -23,10 +23,19 @@ jobs:
         run: cargo build --verbose
 
       - name: Unit tests
-        run: cargo test --bins --lib
+        run: cargo test --bins --lib --verbose
 
       - name: Lint with Clippy
         run: cargo clippy -- -D warnings
 
       - name: Check formatting
         run: cargo fmt -- --check
+
+      - name: Set up Docker Compose
+        run: docker-compose -f test-database/docker-compose.yml up -d
+
+      - name: Run integration tests
+        run: cargo test -- --test-threads 1
+
+      - name: Shutdown Docker Compose
+        run: docker-compose -f docker-compose.yml down
