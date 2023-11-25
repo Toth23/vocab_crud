@@ -9,7 +9,7 @@ pub fn map_word_to_response(word: &Word, word_examples: &Vec<Example>) -> VocabR
         translation: word.translation.to_owned(),
         source: word.source.to_owned(),
         examples: word_examples.into_iter().map(map_example_to_response).collect(),
-        date_added: word.date_added.to_string(),
+        date_added: word.date_added.and_utc().to_rfc3339(),
     }
 }
 
@@ -20,12 +20,12 @@ pub fn map_example_to_response(example: &Example) -> ExampleResponseDto {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDateTime;
+    use chrono::{NaiveDateTime, Utc};
     use uuid::Uuid;
     use super::*;
 
     #[test]
-    fn test_map_example() {
+    fn should_map_example() {
         // given
         let example = Example { id: Uuid::new_v4(), word_id: Uuid::new_v4(), example: "test example".to_owned() };
 
@@ -38,19 +38,17 @@ mod tests {
     }
 
     #[test]
-    fn test_map_word() {
+    fn should_map_word() {
         // given
         let example_string = "test example";
         let word_id = Uuid::new_v4();
         let example = Example { id: Uuid::new_v4(), word_id, example: example_string.to_owned() };
-        let date_added_string = "2023-01-30 23:52:04";
-        let date_added = NaiveDateTime::parse_from_str(date_added_string, "%Y-%m-%d %H:%M:%S").unwrap();
         let word = Word {
             id: word_id,
             word: "test word".to_owned(),
             translation: Some("test translation".to_owned()),
             source: None,
-            date_added,
+            date_added: Utc::now().naive_utc(),
         };
 
         // when
@@ -63,6 +61,25 @@ mod tests {
         assert_eq!(vocab_response_dto.source, word.source);
         assert_eq!(vocab_response_dto.examples.len(), 1);
         assert_eq!(vocab_response_dto.examples[0].example, example_string);
-        assert_eq!(vocab_response_dto.date_added, date_added_string);
+    }
+
+    #[test]
+    fn should_add_utc_timezone_to_date_added() {
+        // given
+        let date_added = NaiveDateTime::parse_from_str("2023-01-30 23:52:04", "%Y-%m-%d %H:%M:%S").unwrap();
+        let word = Word {
+            id: Uuid::new_v4(),
+            word: "test word".to_owned(),
+            translation: Some("test translation".to_owned()),
+            source: None,
+            date_added,
+        };
+        let expected_date_iso_string = "2023-01-30T23:52:04+00:00";
+
+        // when
+        let vocab_response_dto = map_word_to_response(&word, &vec![]);
+
+        // then
+        assert_eq!(vocab_response_dto.date_added, expected_date_iso_string);
     }
 }
