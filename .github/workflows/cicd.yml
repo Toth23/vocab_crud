@@ -16,7 +16,6 @@ jobs:
         uses: moonrepo/setup-rust@v1
         with:
           profile: minimal
-          toolchain: stable
 
       - name: Build
         run: cargo build --verbose
