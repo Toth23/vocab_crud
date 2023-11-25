@@ -8,10 +8,7 @@ pub fn map_word_to_response(word: &Word, word_examples: &[Example]) -> VocabResp
         word: word.word.to_owned(),
         translation: word.translation.to_owned(),
         source: word.source.to_owned(),
-        examples: word_examples
-            .iter()
-            .map(map_example_to_response)
-            .collect(),
+        examples: word_examples.iter().map(map_example_to_response).collect(),
         date_added: word.date_added.and_utc().to_rfc3339(),
     }
 }
