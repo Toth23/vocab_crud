@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,4 +38,4 @@ jobs:
         run: cargo test -- --test-threads 1
 
       - name: Shutdown Docker Compose
-        run: docker-compose -f docker-compose.yml down
+        run: docker-compose -f test-database/docker-compose.yml down
