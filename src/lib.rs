@@ -22,11 +22,10 @@ pub fn create_app(database_url: String) -> Router {
     let manager = Manager::new(database_url, Runtime::Tokio1);
     let pool = Pool::builder(manager).max_size(8).build().unwrap();
 
-    let app = create_router(Arc::new(AppState { db: pool })).layer(
+    create_router(Arc::new(AppState { db: pool })).layer(
         CorsLayer::new()
             .allow_methods(Any)
             .allow_headers(Any)
             .allow_origin(Any),
-    );
-    app
+    )
 }
