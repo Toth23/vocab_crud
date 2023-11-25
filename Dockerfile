@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y libpq-dev postgresql && rm -rf /var/lib
 
 COPY --from=builder /usr/src/vocab-crud/target/release/vocab_crud /usr/local/bin/vocab_crud
 
+ENV HOST 0.0.0.0
 ENV PORT 8080
 
 EXPOSE 8080
