@@ -8,12 +8,12 @@ use routes::create_router;
 
 mod db_util;
 pub mod dtos;
+mod extractors;
 mod handlers;
 mod mappers;
 mod models;
 mod routes;
 mod schema;
-mod extractors;
 mod validators;
 
 pub struct AppState {

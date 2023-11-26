@@ -6,7 +6,9 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use diesel::{BelongingToDsl, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{
+    BelongingToDsl, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper,
+};
 use serde::Deserialize;
 
 use crate::db_util::execute_in_db;

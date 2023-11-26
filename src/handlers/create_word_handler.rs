@@ -29,7 +29,7 @@ pub async fn create_word(
         translation: body.translation,
         source: body.source,
         date_added: date_time_now,
-        user_id
+        user_id,
     };
 
     let (word, word_examples) = execute_in_db(app_state, move |conn| {
