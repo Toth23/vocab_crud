@@ -6,14 +6,16 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use diesel::{BelongingToDsl, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{BelongingToDsl, ExpressionMethods, GroupedBy, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::Deserialize;
 
 use crate::db_util::execute_in_db;
 use crate::dtos::VocabResponseDto;
+use crate::extractors::UserIdentifier;
 use crate::mappers::map_word_to_response;
 use crate::models::Example;
 use crate::schema::words::dsl::words;
+use crate::schema::words::user_id as word_table_user_id;
 use crate::{models::Word, AppState};
 
 #[derive(Deserialize, Debug, Default)]
@@ -24,6 +26,7 @@ pub struct FilterOptions {
 
 pub async fn list_vocab(
     opts: Option<Query<FilterOptions>>,
+    UserIdentifier(user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let Query(opts) = opts.unwrap_or_default();
@@ -38,6 +41,7 @@ pub async fn list_vocab(
             .limit(limit as i64)
             .offset(offset as i64)
             .select(Word::as_select())
+            .filter(word_table_user_id.eq(user_id))
             .load(conn)
             .expect("Error loading words");
         let db_examples = Example::belonging_to(&db_words)

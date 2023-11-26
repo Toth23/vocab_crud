@@ -11,6 +11,7 @@ pub struct Word {
     pub translation: Option<String>,
     pub source: Option<String>,
     pub date_added: NaiveDateTime,
+    pub user_id: String,
 }
 
 #[derive(Insertable)]
@@ -20,6 +21,7 @@ pub struct NewWord {
     pub translation: Option<String>,
     pub source: Option<String>,
     pub date_added: NaiveDateTime,
+    pub user_id: String,
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]

@@ -11,9 +11,11 @@ use crate::dtos::UpdateWordDto;
 use crate::schema::words::dsl::words;
 use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
 use crate::AppState;
+use crate::extractors::UserIdentifier;
 
 pub async fn update_word(
     Path(word_id): Path<Uuid>,
+    UserIdentifier(_user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
     Json(body): Json<UpdateWordDto>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

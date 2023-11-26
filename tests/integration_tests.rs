@@ -16,6 +16,9 @@ use vocab_crud::dtos::{
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
+const USER_ID_HEADER: &'static str = "x-user-identifier";
+const SAMPLE_USER_ID: &'static str = "sample user id";
+
 #[tokio::test]
 async fn health_is_ok() {
     // given
@@ -133,6 +136,7 @@ async fn get_word_list(port: u16) -> Vec<VocabResponseDto> {
     let client = reqwest::Client::new();
     let resp = client
         .get(format!("http://localhost:{port}/api/vocab"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();
@@ -150,6 +154,7 @@ async fn post_word(port: u16, create_word_dto: &CreateWordDto) -> VocabResponseD
     let client = reqwest::Client::new();
     let resp = client
         .post(format!("http://localhost:{port}/api/vocab"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&create_word_dto)
         .send()
         .await
@@ -171,6 +176,7 @@ async fn update_word(port: u16, word_id: Uuid, update_word_dto: &UpdateWordDto) 
     let client = reqwest::Client::new();
     let resp = client
         .put(format!("http://localhost:{port}/api/vocab/{word_id}"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&update_word_dto)
         .send()
         .await
@@ -186,6 +192,7 @@ async fn delete_word(port: u16, word_id: Uuid) {
     let client = reqwest::Client::new();
     let resp = client
         .delete(format!("http://localhost:{port}/api/vocab/{word_id}"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();
@@ -206,6 +213,7 @@ async fn post_example(
         .post(format!(
             "http://localhost:{port}/api/vocab/{word_id}/examples"
         ))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&create_example_dto)
         .send()
         .await
@@ -228,6 +236,7 @@ async fn delete_example(port: u16, word_id: Uuid, example_id: Uuid) {
         .delete(format!(
             "http://localhost:{port}/api/vocab/{word_id}/examples/{example_id}"
         ))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();

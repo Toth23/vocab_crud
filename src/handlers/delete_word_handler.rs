@@ -12,9 +12,11 @@ use crate::schema::examples::word_id as example_table_word_id;
 use crate::schema::words::dsl::words;
 use crate::schema::words::id as word_table_id;
 use crate::AppState;
+use crate::extractors::UserIdentifier;
 
 pub async fn delete_word(
     Path(word_id): Path<Uuid>,
+    UserIdentifier(_user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let app_state: Arc<AppState> = db.clone();

@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::db_util::execute_in_db;
 use crate::dtos::CreateExampleDto;
+use crate::extractors::UserIdentifier;
 use crate::mappers::map_example_to_response;
 use crate::models::{Example, NewExample};
 use crate::schema::examples::dsl::examples;
@@ -15,6 +16,7 @@ use crate::AppState;
 
 pub async fn create_example(
     Path(word_id): Path<Uuid>,
+    UserIdentifier(_user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
     Json(body): Json<CreateExampleDto>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

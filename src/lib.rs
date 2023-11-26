@@ -13,6 +13,7 @@ mod mappers;
 mod models;
 mod routes;
 mod schema;
+mod extractors;
 
 pub struct AppState {
     db: Pool,
