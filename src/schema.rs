@@ -15,6 +15,7 @@ diesel::table! {
         translation -> Nullable<Text>,
         date_added -> Timestamp,
         source -> Nullable<Text>,
+        user_id -> Text,
     }
 }
 
