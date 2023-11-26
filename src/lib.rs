@@ -14,6 +14,7 @@ mod models;
 mod routes;
 mod schema;
 mod extractors;
+mod validators;
 
 pub struct AppState {
     db: Pool,

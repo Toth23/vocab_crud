@@ -7,12 +7,13 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::db_util::{execute_in_db, validate_user_access};
+use crate::db_util::execute_in_db;
 use crate::extractors::UserIdentifier;
 use crate::schema::examples::dsl::examples;
 use crate::schema::examples::word_id as example_table_word_id;
 use crate::schema::words::dsl::words;
 use crate::schema::words::id as word_table_id;
+use crate::validators::validate_user_access;
 use crate::AppState;
 
 pub async fn delete_word(

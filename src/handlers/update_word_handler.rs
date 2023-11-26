@@ -7,11 +7,12 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::db_util::{execute_in_db, validate_user_access};
+use crate::db_util::execute_in_db;
 use crate::dtos::UpdateWordDto;
 use crate::extractors::UserIdentifier;
 use crate::schema::words::dsl::words;
 use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
+use crate::validators::validate_user_access;
 use crate::AppState;
 
 pub async fn update_word(

@@ -7,12 +7,13 @@ use diesel::{RunQueryDsl, SelectableHelper};
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::db_util::{execute_in_db, validate_user_access};
+use crate::db_util::execute_in_db;
 use crate::dtos::CreateExampleDto;
 use crate::extractors::UserIdentifier;
 use crate::mappers::map_example_to_response;
 use crate::models::{Example, NewExample};
 use crate::schema::examples::dsl::examples;
+use crate::validators::validate_user_access;
 use crate::AppState;
 
 pub async fn create_example(
