@@ -4,24 +4,27 @@ use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use diesel::associations::HasTable;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use serde_json::json;
 use uuid::Uuid;
 
-use crate::db_util::execute_in_db;
+use crate::db_util::{execute_in_db, validate_user_access};
+use crate::extractors::UserIdentifier;
 use crate::schema::examples::dsl::examples;
 use crate::schema::examples::word_id as example_table_word_id;
 use crate::schema::words::dsl::words;
 use crate::schema::words::id as word_table_id;
 use crate::AppState;
-use crate::extractors::UserIdentifier;
 
 pub async fn delete_word(
     Path(word_id): Path<Uuid>,
-    UserIdentifier(_user_id): UserIdentifier,
+    UserIdentifier(user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let app_state: Arc<AppState> = db.clone();
+    validate_user_access(db.clone(), &user_id, &word_id)
+        .await
+        .map_err(|status| (status, Json(json!({ "error": "Word not found" }))))?;
 
-    execute_in_db(app_state, move |conn| {
+    execute_in_db(db.clone(), move |conn| {
         diesel::delete(examples::table().filter(example_table_word_id.eq(word_id)))
             .execute(conn)
             .expect("Error deleting examples of word");
@@ -32,7 +35,7 @@ pub async fn delete_word(
     })
     .await;
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
     });
 

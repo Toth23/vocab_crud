@@ -4,24 +4,27 @@ use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use diesel::associations::HasTable;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use serde_json::json;
 use uuid::Uuid;
 
-use crate::db_util::execute_in_db;
+use crate::db_util::{execute_in_db, validate_user_access};
 use crate::dtos::UpdateWordDto;
+use crate::extractors::UserIdentifier;
 use crate::schema::words::dsl::words;
 use crate::schema::words::{id as word_table_id, source, translation, word as word_column};
 use crate::AppState;
-use crate::extractors::UserIdentifier;
 
 pub async fn update_word(
     Path(word_id): Path<Uuid>,
-    UserIdentifier(_user_id): UserIdentifier,
+    UserIdentifier(user_id): UserIdentifier,
     State(db): State<Arc<AppState>>,
     Json(body): Json<UpdateWordDto>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let app_state: Arc<AppState> = db.clone();
+    validate_user_access(db.clone(), &user_id, &word_id)
+        .await
+        .map_err(|status| (status, Json(json!({ "error": "Word not found" }))))?;
 
-    execute_in_db(app_state, move |conn| {
+    execute_in_db(db.clone(), move |conn| {
         diesel::update(words::table().filter(word_table_id.eq(word_id)))
             .set((
                 word_column.eq(body.word),
@@ -33,7 +36,7 @@ pub async fn update_word(
     })
     .await;
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
     });
 
