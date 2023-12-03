@@ -1,0 +1,16 @@
+Table "words" {
+  "id" UUID [pk, default: `uuid_generate_v4()`]
+  "user_id" TEXT [not null]
+  "word" TEXT [not null]
+  "translation" TEXT
+  "date_added" TIMESTAMP [not null]
+  "source" TEXT
+}
+
+Table "examples" {
+  "id" UUID [pk, default: `uuid_generate_v4()`]
+  "word_id" UUID [not null]
+  "example" TEXT [not null]
+}
+
+Ref:"words"."id" < "examples"."word_id"
