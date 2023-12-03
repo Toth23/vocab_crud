@@ -6,6 +6,7 @@ use std::env;
 use diesel::prelude::*;
 use diesel::Connection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use reqwest::Response;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -15,6 +16,9 @@ use vocab_crud::dtos::{
 };
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
+
+const USER_ID_HEADER: &'static str = "x-user-identifier";
+const SAMPLE_USER_ID: &'static str = "sample user id";
 
 #[tokio::test]
 async fn health_is_ok() {
@@ -42,6 +46,28 @@ async fn gives_an_empty_list() {
     let word_list = get_word_list(port).await;
 
     // then
+    assert_eq!(word_list.len(), 0)
+}
+
+#[tokio::test]
+async fn cannot_see_words_from_other_users() {
+    // given
+    let port = spawn_test_server();
+    post_word(port, &get_sample_create_word_dto(vec![])).await;
+
+    // when
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(format!("http://localhost:{port}/api/vocab"))
+        .header(USER_ID_HEADER, "I'm a different user")
+        .send()
+        .await
+        .unwrap();
+
+    // then
+    assert_eq!(resp.status(), 200);
+    let word_list = extract_word_list_from_response(resp).await;
+
     assert_eq!(word_list.len(), 0)
 }
 
@@ -133,23 +159,27 @@ async fn get_word_list(port: u16) -> Vec<VocabResponseDto> {
     let client = reqwest::Client::new();
     let resp = client
         .get(format!("http://localhost:{port}/api/vocab"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();
 
     assert_eq!(resp.status(), 200);
 
+    extract_word_list_from_response(resp).await
+}
+
+async fn extract_word_list_from_response(resp: Response) -> Vec<VocabResponseDto> {
     let mut resp_body: HashMap<String, Value> = resp.json().await.unwrap();
     assert_eq!(resp_body["status"], "success");
-    let vocab_response: Vec<VocabResponseDto> =
-        serde_json::from_value(resp_body.remove("words").unwrap()).expect("Deserialization failed");
-    vocab_response
+    serde_json::from_value(resp_body.remove("words").unwrap()).expect("Deserialization failed")
 }
 
 async fn post_word(port: u16, create_word_dto: &CreateWordDto) -> VocabResponseDto {
     let client = reqwest::Client::new();
     let resp = client
         .post(format!("http://localhost:{port}/api/vocab"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&create_word_dto)
         .send()
         .await
@@ -171,6 +201,7 @@ async fn update_word(port: u16, word_id: Uuid, update_word_dto: &UpdateWordDto) 
     let client = reqwest::Client::new();
     let resp = client
         .put(format!("http://localhost:{port}/api/vocab/{word_id}"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&update_word_dto)
         .send()
         .await
@@ -186,6 +217,7 @@ async fn delete_word(port: u16, word_id: Uuid) {
     let client = reqwest::Client::new();
     let resp = client
         .delete(format!("http://localhost:{port}/api/vocab/{word_id}"))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();
@@ -206,6 +238,7 @@ async fn post_example(
         .post(format!(
             "http://localhost:{port}/api/vocab/{word_id}/examples"
         ))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .json(&create_example_dto)
         .send()
         .await
@@ -228,6 +261,7 @@ async fn delete_example(port: u16, word_id: Uuid, example_id: Uuid) {
         .delete(format!(
             "http://localhost:{port}/api/vocab/{word_id}/examples/{example_id}"
         ))
+        .header(USER_ID_HEADER, SAMPLE_USER_ID)
         .send()
         .await
         .unwrap();

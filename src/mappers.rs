@@ -59,6 +59,7 @@ mod tests {
             translation: Some("test translation".to_owned()),
             source: None,
             date_added: Utc::now().naive_utc(),
+            user_id: "some user id".to_owned(),
         };
 
         // when
@@ -83,6 +84,7 @@ mod tests {
             word: "test word".to_owned(),
             translation: Some("test translation".to_owned()),
             source: None,
+            user_id: "some user id".to_owned(),
             date_added,
         };
         let expected_date_iso_string = "2023-01-30T23:52:04+00:00";
