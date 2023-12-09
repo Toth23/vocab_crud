@@ -17,7 +17,7 @@ use crate::extractors::UserIdentifier;
 use crate::mappers::map_word_to_response;
 use crate::models::Example;
 use crate::schema::words::dsl::words;
-use crate::schema::words::user_id as word_table_user_id;
+use crate::schema::words::{date_added, user_id as word_table_user_id};
 use crate::{models::Word, AppState};
 
 #[derive(Deserialize, Debug, Default)]
@@ -44,6 +44,7 @@ pub async fn list_vocab(
             .offset(offset as i64)
             .select(Word::as_select())
             .filter(word_table_user_id.eq(user_id))
+            .order_by(date_added.asc())
             .load(conn)
             .expect("Error loading words");
         let db_examples = Example::belonging_to(&db_words)
